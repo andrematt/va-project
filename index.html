@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GDP data viz</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="node_modules/d3/dist/d3.js"></script>
+    <script src="index.js"></script>
+</head>
+
+<body>
+	<div class="wrapper">
+		<div class="title"><h1>VAST mini challenge 1</h1></div>
+	<div class="main">
+		<div id="viz"></div>
+    </div>
+    <div class="left-box">Vehicle Type
+        <select id="vehicleTypeList">
+            <option value="1" selected>1 axis</option>
+            <option value="2">2 axis</option>
+            <option value="2P">2 axis Ranger</option>
+            <option value="3">3 axis</option>
+            <option value="4">4 axis</option>
+            <option value="5">5 axis</option>
+        </select>
+        <button id="singleVehicleViz" onClick="vehicleFilter()">draw</button>
+    </div>
+    <script>fetchData();</script>
+</body>
+
+
+</html>
