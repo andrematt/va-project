@@ -42,7 +42,7 @@ function initializeViz(data){
 	nodes.enter()
 		.append("circle")
 		.attr("stroke", "black")
-		.attr("r", 5)
+		.attr("r", 7)
 		.on("mouseover", function(d) {		
         div.transition()		
         .duration(200)		
@@ -145,37 +145,47 @@ function vehicleFilter(){
 }
 
 function drawPath(data){
-	
-	//let svg = d3.select("#viz");
-
+	console.log("initial data:");
+	console.log(data);
+  console.log("extracting the path:");
+  let start =pathExtractor(data);
+  console.log(start);
 	let edges=svg.selectAll("polyline")
-		.data(data);
+		.data(start);
+	
+edges.exit().remove(); //rimuove la selezione precedente
+
+	console.log("edges obj:");
+	console.log(edges);
 
 	edges.enter()
 		.append("polyline")
 		.attr("fill", "none")
 		.attr("stroke", "black")
     .attr("stroke-width", 2)
-    
+    .merge(edges)
     .attr("points", function(d, i){
-    let start=[];
-    for (let i=0; i<d.path.length; i++){
-    	start.push(getCoord(d.path[i].path));
-    }
-    let result="";
-    for(let i=0; i<start.length; i++){
-    	result+=start[i].join(",")+" ";
-    }
-    console.log(result);
-    return result;
-    });
+    	console.log(d);
+    	return d;
+    });  
 
-  edges.exit().remove();
-    
+   
+
 }
 
-function transformInPolyPath(data){
-
+function pathExtractor(data){
+	let responce=data.map(function (d){
+  	let temp=[];
+  	let result="";
+  	for (let i=0; i<d.path.length; i++){ //estrae il path
+    	temp.push(getCoord(d.path[i].path));
+  	}
+  	for(let i=0; i<temp.length; i++){ //trasforma in una stringa leggibile da polyline
+    	result+=temp[i].join(",")+" ";
+  	}
+  	return result;
+  });
+  return responce;
 }
 
 function getCoord(pointToFind){ //cerca in dataStore[1] le coord di data.path
