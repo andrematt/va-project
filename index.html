@@ -16,7 +16,7 @@
 	<div class="main">
 		<div id="viz"></div>
     </div>
-    <div class="left-box-1">Vehicle Type
+    <div class="left-box-1"><h4>Vehicle Type</h4>
         <select id="vehicleTypeList">
             <option value="1" selected>1 axis</option>
             <option value="2">2 axis</option>
@@ -26,8 +26,8 @@
             <option value="5">5 axis</option>
         </select>
         <button id="singleVehicleViz" onClick="draw()">draw</button>
-    </div>
-    <div class="left-box-2">Time span
+    </div> <!-- left-box-1 -->
+    <div class="left-box-2"><h4>Time span</h4>
         <select id="yearList">
             <option value="0" selected>All years</option>
             <option value="2015">2015</option>
@@ -48,8 +48,30 @@
             <option value="11">November</option>
             <option value="12">December</option>
         </select>
+        <select id="dayList">
+            <option value="0" selected>All days</option>
+             <option value="01">Monday</option>
+            <option value="02">Tuesday</option>
+            <option value="03">Wednesday</option>
+            <option value="04">Thursday</option>
+            <option value="05">Friday</option>
+            <option value="06">Saturnday</option>
+            <option value="07">Sunday</option>
+        </select>    
         <button id="filter" onClick="draw()">filter</button>
-    </div>
+    </div> <!-- left-box-2 -->
+    <div class="left-box-3"><h4>Path length</h4>
+        <select id="pathLenghtList">
+            <option value="0" selected>All lengths</option>
+            <option value="1">< 5</option>
+            <option value="2">5 - 15</option>
+            <option value="3">15 - 25</option>
+            <option value="4">25 - 35</option>
+            <option value="5">> 35</option>
+        </select>
+        <button id="singleLenghtViz" onClick="draw()">draw</button>
+    </div> <!-- left-box-3 -->
+</div><!-- wrapper -->
     <script>fetchData();</script>
 </body>
 
