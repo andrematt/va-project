@@ -98,7 +98,8 @@ function initializeViz(data){
 }
 
 function parse(data){
-	let splitted=data.split(/,|\r\n/); //divide a ogni "," o a nuova linea
+	let splitted=data.split(/,|\r\n/); //divide a ogni "," o a nuova linea WINDOWS FILE
+	//let splitted=data.split(/,|\n/); //divide a ogni "," o a nuova linea LINUX FILE
 	let cloned=[];
   for (i = 0; i < splitted.length; i=i+4) { //ricostruisce la row originaria del csv
     cloned.push(splitted.slice(i, i+4));
@@ -212,7 +213,7 @@ function getCoord(pointToFind){ //cerca in dataStore[1] le coord di data.path
 	return(onlySearchedPoint[0].coord);
 }
 
-function draw(){
+function draw(){ //TODO: filtro per path length
 	let parsedRoutes=parse(dataStore[0]); 
 	let timeFiltered=timeFilter(parsedRoutes);
 	if (timeFiltered.length>0) {
@@ -224,13 +225,16 @@ function draw(){
 	}
 }
 
-function timeFilter(data){
+function timeFilter(data){ //TODO: filtro per giorni
 	let m = document.getElementById("monthList");
 	let mValue = m.options[m.selectedIndex].value;
 	let y = document.getElementById("yearList");
 	let yValue = y.options[y.selectedIndex].value;
+	let d = document.getElementById("dayList");
+	let dValue = d.options[d.selectedIndex].value;
 	let yearFiltered=[];
 	let monthFiltered=[];
+	let dayFiltered=[];
 	if (yValue!=='0') {
 		yearFiltered=data.filter(function (d){
 			let sliced=d[0].slice(0,4);
@@ -253,6 +257,20 @@ function timeFilter(data){
 	else {
 		monthFiltered=yearFiltered;
 	}
-	return monthFiltered;
+	if (dValue!=='-1'){ //per prendere il giorno della settimana: date.prototype.getDay()
+		dayFiltered=monthFiltered.filter(function (d){
+		let thisDate = new Date(d[0]); //trasforma la stringa in oggetto data
+		//console.log(thisDate);
+		//console.log(thisDate.getDay());
+		//console.log(dValue); 
+		if ((thisDate.getDay()+"")===dValue){
+			return d;
+		}
+		});
+	}
+	else {
+		dayFiltered=monthFiltered;
+	}
+	return dayFiltered;
 }
 
