@@ -14,7 +14,7 @@ let dataStore=[];
 let svg;
 
 function fetchData(){
-	const urlSensor="data/sensorMini.csv";
+	const urlSensor="data/sensor.csv";
 	const urlPoints="data/points.csv"
 	let sensorData=fetch(urlSensor).then((resp) => resp.text());
 	let pointData=fetch(urlPoints).then((resp) => resp.json());
@@ -98,8 +98,7 @@ function initializeViz(data){
 }
 
 function parse(data){
-	let splitted=data.split(/,|\r\n/); //divide a ogni "," o a nuova linea WINDOWS FILE
-	//let splitted=data.split(/,|\n/); //divide a ogni "," o a nuova linea LINUX FILE
+	let splitted=data.split(/,|\n|\r\n/); //divide a ogni "," o a nuova linea. Carriage return diverso per linux e windows
 	let cloned=[];
   for (i = 0; i < splitted.length; i=i+4) { //ricostruisce la row originaria del csv
     cloned.push(splitted.slice(i, i+4));
@@ -111,8 +110,11 @@ function parse(data){
 function vehicleFilter(data){
 	let e = document.getElementById("vehicleTypeList");
 	let type = e.options[e.selectedIndex].value;
-	let onlyVehicleType=data.filter(element => element[2]===type);
-	let sortedVehicles=onlyVehicleType.sort(function(a,b){ //ordina l'array in base all'id del veicolo
+	return(data.filter(element => element[2]===type));
+}
+
+function sortAndMakePath(data){
+	let sortedVehicles=data.sort(function(a,b){ //ordina l'array in base all'id del veicolo
 		if (a[1] < b[1]) {
     	return -1;
   	}
@@ -147,7 +149,6 @@ function vehicleFilter(data){
 			arrayPath.push(singlePath);
 		}
 	}
-	console.log(arrayPath);
 	return arrayPath;
 }
 
@@ -213,19 +214,51 @@ function getCoord(pointToFind){ //cerca in dataStore[1] le coord di data.path
 	return(onlySearchedPoint[0].coord);
 }
 
-function draw(){ //TODO: filtro per path length
+function draw(){
 	let parsedRoutes=parse(dataStore[0]); 
-	let timeFiltered=timeFilter(parsedRoutes);
-	if (timeFiltered.length>0) {
-		let pathArray=vehicleFilter(timeFiltered);
-		drawPath(pathArray);
+	let vehicleFiltered=vehicleFilter(parsedRoutes);
+	let timeFiltered=timeFilter(vehicleFiltered);
+	let paths=sortAndMakePath(timeFiltered);
+	let lengthFilteredPaths=lengthFilter(paths);
+	console.log(lengthFilteredPaths);
+	if (lengthFilteredPaths.length>0) {
+		drawPath(lengthFilteredPaths);
 	}
 	else {
 		alert("no data to viz!")
 	}
 }
 
-function timeFilter(data){ //TODO: filtro per giorni
+function lengthFilter(data){
+	console.log(data);
+  let e = document.getElementById("pathLenghtList");
+	let selectedValue = e.options[e.selectedIndex].value;
+	//let parsedLength=parseInt(length, 10);
+	//console.log(parsedLength);
+	if(selectedValue==="0"){
+		return data;
+	}
+	else if (selectedValue==="1") {
+		return(data.filter(element => element.path.length<5));
+	}
+	else if(selectedValue=="2"){
+		let result=data.filter(element => element.path.length>5);
+		return result.filter(element => element.path.length<15);
+	}
+		else if(selectedValue=="3"){
+		let result=data.filter(element => element.path.length>15);
+		return result.filter(element => element.path.length<25);
+	}
+		else if(selectedValue=="4"){
+		let result=data.filter(element => element.path.length>25);
+		return result.filter(element => element.path.length<35);
+	}
+	else {
+		return(data.filter(element => element.path.length>35));
+	}
+}
+
+function timeFilter(data){
 	let m = document.getElementById("monthList");
 	let mValue = m.options[m.selectedIndex].value;
 	let y = document.getElementById("yearList");
@@ -260,12 +293,10 @@ function timeFilter(data){ //TODO: filtro per giorni
 	if (dValue!=='-1'){ //per prendere il giorno della settimana: date.prototype.getDay()
 		dayFiltered=monthFiltered.filter(function (d){
 		let thisDate = new Date(d[0]); //trasforma la stringa in oggetto data
-		//console.log(thisDate);
-		//console.log(thisDate.getDay());
-		//console.log(dValue); 
 		if ((thisDate.getDay()+"")===dValue){
 			return d;
 		}
+		thisDate=null;
 		});
 	}
 	else {
