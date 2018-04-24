@@ -7,11 +7,15 @@ suddivisibile in:
 		-inserire dei filtri sui veicoli(tutti o ranger, n di assi) e raggruppamenti (spostamenti in un giorno, settimana, mese)
 3 aggiungere delle visualizzazioni semplici relativi alle stats delle selezioni precedenti:
 		-grafico di lunghezza dei percorsi
-		-nelle tooltip, stats di tipo di veicoli che attraversano quel gate
+		-nelle tooltip, stats sul tipo di veicoli che attraversano quel gate
+		-max e min path length per ogni tipo di veicolo
 */
 
 let dataStore=[];
+let actualData=[];
 let svg;
+let nodes;
+let graphView=true;
 
 function fetchData(){
 	const urlSensor="data/sensor.csv";
@@ -20,6 +24,8 @@ function fetchData(){
 	let pointData=fetch(urlPoints).then((resp) => resp.json());
 	Promise.all([sensorData,pointData]).then(function(values){
 		if (values[0]&&values[1]) {
+  		dataStore.push(values[0]);
+  		dataStore.push(values[1]);
 			initializeViz(values)
 		}
 		else {
@@ -30,12 +36,11 @@ function fetchData(){
 	
 
 
-function initializeViz(data){
-  dataStore.push(data[0]);
-  dataStore.push(data[1]);
-	const h=982;
-	const w=982;
+function initializeViz(){
+	var h=982;
+	var w=982;
   const padding=30;
+  d3.select("svg").remove();
 
   let div = d3.select("#viz").append("div")	
     .attr("class", "tooltip")				
@@ -47,8 +52,8 @@ function initializeViz(data){
  				.attr("width", w)
  				.attr("height", h);
 
- 	let nodes=svg.selectAll("circle")
-		.data(data[1]);
+ 	nodes=svg.selectAll("circle")
+		.data(dataStore[1]);
 
 	nodes.enter()
 		.append("circle")
@@ -95,6 +100,21 @@ function initializeViz(data){
 			return ("purple");
 		}
 	});
+}
+
+function initializeStatViz(){
+	graphView=false;	
+	var h=400;
+	var w=982;
+  const padding=30;
+	d3.select("svg").remove();
+	
+	svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
+        .append("svg")
+        .attr("class", "svg-container")
+ 				.attr("width", w)
+ 				.attr("height", h);
+
 }
 
 function parse(data){
@@ -172,7 +192,7 @@ function drawPath(data){
 		.append("polyline")
 		.attr("fill", "none")
 		.attr("stroke", "black")
-    .attr("stroke-width", 0.1)
+    .attr("stroke-width", 0.2)
     //.merge(edges) //senza update nè merge i dati sono aggiunti solo da enter: aggiunge paths se più lunghi, ma non aggiorna quelli esistenti
     .attr("points", function(d, i){
     	return d;
@@ -214,19 +234,59 @@ function getCoord(pointToFind){ //cerca in dataStore[1] le coord di data.path
 	return(onlySearchedPoint[0].coord);
 }
 
-function draw(){
+function filter(){
 	let parsedRoutes=parse(dataStore[0]); 
 	let vehicleFiltered=vehicleFilter(parsedRoutes);
 	let timeFiltered=timeFilter(vehicleFiltered);
 	let paths=sortAndMakePath(timeFiltered);
 	let lengthFilteredPaths=lengthFilter(paths);
+	actualData=lengthFilteredPaths;
 	console.log(lengthFilteredPaths);
-	if (lengthFilteredPaths.length>0) {
-		drawPath(lengthFilteredPaths);
+	let max=d3.max(lengthFilteredPaths, function(d){return d.path.length});
+	//let avgPathLen= mean...
+  console.log(max);
+  //reduce function: d3min, max, sum, extends.. sono fatte trmaite reduce. Es: sommatoria dei valor:
+  //sum = aggregated from previous steps
+  let initialValue=0;
+  let totalPathLength = lengthFilteredPaths.reduce(function(sum, d) {return sum+d.path.length}, initialValue);
+  console.log(totalPathLength);
+  //group: trova un indicatore per un gruppo di dati: es, un record type
+  //es nesting già in d3
+  let groups=d3.nest()
+  	.key(function(d) {return d.path.length>10;})
+  	.entries(lengthFilteredPaths);
+
+  console.log(groups);  
+}
+
+function drawGraph(){
+	 if(!graphView){
+  	initializeViz();
+  	graphView=true;
+  }
+	if (actualData.length>0) {
+		drawPath(actualData);
 	}
 	else {
 		alert("no data to viz!")
 	}
+}
+
+function seeStats(){
+	 if(graphView){
+  	initializeStatViz();
+  	graphView=false;
+  }
+	if (actualData.length>0) {
+		statViewTest(actualData);
+	}
+	else {
+		alert("no data to viz!")
+	}
+}
+
+function statViewTest(data){
+	alert("stat view test :)");
 }
 
 function lengthFilter(data){
@@ -290,13 +350,13 @@ function timeFilter(data){
 	else {
 		monthFiltered=yearFiltered;
 	}
-	if (dValue!=='-1'){ //per prendere il giorno della settimana: date.prototype.getDay()
+	if (dValue!=='-1'){ 
 		dayFiltered=monthFiltered.filter(function (d){
 		let thisDate = new Date(d[0]); //trasforma la stringa in oggetto data
-		if ((thisDate.getDay()+"")===dValue){
+		if ((thisDate.getDay()+"")===dValue){ //prende il giorno della settimana
 			return d;
 		}
-		thisDate=null;
+		thisDate=null; //annulla il riferimento all'oggetto, altrimenti il browser crasha http://bertanguven.com/preventing-memory-leaks-in-javascript-null-vs-delete
 		});
 	}
 	else {
