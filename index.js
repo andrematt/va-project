@@ -1,4 +1,10 @@
 /*  
+
+	 //reduce function: d3min, max, sum, extends.. sono fatte trmaite reduce. Es: sommatoria dei valor:
+  //sum = aggregated from previous steps
+  let initialValue=0;
+  let totalPathLength = actualData.reduce(function(sum, d) {return sum+d.path.length}, initialValue);
+
 problema: individuare dei pattern insoliti in un dataset di spostamenti
 
 suddivisibile in:
@@ -11,8 +17,9 @@ suddivisibile in:
 		-max e min path length per ogni tipo di veicolo
 */
 
-let dataStore=[];
-let actualData=[];
+let dataStore=[]; //dati letti da file
+let actualData=[]; //dati in uso per la visualizzazione
+let mappedCoord=[]; //mapping di coordinate a dimenzioni svg
 let svg;
 let nodes;
 let graphView=true;
@@ -34,12 +41,10 @@ function fetchData(){
 	});
 }
 	
-
-
 function initializeViz(){
-	var h=982;
-	var w=982;
-  const padding=30;
+	var h=800;
+	var w=800;
+  const padding=60;
   d3.select("svg").remove();
 
   let div = d3.select("#viz").append("div")	
@@ -52,6 +57,38 @@ function initializeViz(){
  				.attr("width", w)
  				.attr("height", h);
 
+ 	let maxX=d3.max(dataStore[1], function(d){return d.coord[0]});
+	let minX=d3.min(dataStore[1], function(d){return d.coord[0]});
+	let maxY=d3.max(dataStore[1], function(d){return d.coord[1]});
+	let minY=d3.min(dataStore[1], function(d){return d.coord[1]});
+
+	let xScale = d3.scaleLinear()
+		.domain([minX, maxX])
+		.range([0+padding/2, 800-padding/2]);
+	let xMap = function (d){return xScale(d.coord[0])};
+	let xAxis = d3.axisBottom(xScale);
+
+let yScale = d3.scaleLinear()
+	.domain([minY, maxY])
+	.range([0+padding/2, 800-padding/2]);
+let yMap = function (d){return yScale(d.coord[1])};
+let yAxis = d3.axisBottom(yScale);			
+
+	//approfitto delle funzioni xScale e Yscale per salvare le coordinate mappate alle dimenzioni dell'svg, per riusarle dopo per i path
+	mappedCoord=dataStore[1].map(function (d){
+		let scaledCoord=[];
+		let cloned=[];
+		scaledCoord[0]=xScale(d.coord[0]);
+		scaledCoord[1]=yScale(d.coord[1]);
+		let singleObj = {
+			"type" : d.type,
+			"value": d.value,
+			"fullname": d.fullname,
+			"coord": scaledCoord,
+		};
+		return(singleObj);
+	});
+
  	nodes=svg.selectAll("circle")
 		.data(dataStore[1]);
 
@@ -59,6 +96,8 @@ function initializeViz(){
 		.append("circle")
 		.attr("stroke", "black")
 		.attr("r", 7)
+		.attr("cx", xMap)
+    .attr("cy", yMap)
 		.on("mouseover", function(d) {		
       div.transition() //si può fare classe css della transition?		
           .duration(200)		
@@ -74,12 +113,6 @@ function initializeViz(){
      });
 
 	svg.selectAll("circle")
-	.attr("cx", function(d,i){
-		return d.coord[0];
-	})
-	.attr("cy", function(d,i){
-		return d.coord[1];
-	})
 	.attr("fill", function(d){
 		if(d.type==='ranger-stop'){
 			return ("yellow");
@@ -102,19 +135,61 @@ function initializeViz(){
 	});
 }
 
+function pathLength(){
+	let w = 800;
+	let h = 400;
+	let padding=60;
+	
+  let groups=d3.nest() //raggruppa i dati per lunghezza del path
+  	.key(function(d) {return d.path.length;})
+  	.entries(actualData);
+
+	let maxX=d3.max(groups, function(d){return +d.key});
+	let minX=d3.min(groups, function(d){return +d.key});
+	let maxY=d3.max(groups, function(d){return d.values.length});
+	let minY=d3.min(groups, function(d){return d.values.length});
+
+	let xScale = d3.scaleLinear()
+		.domain([minX, maxX])
+		.range([0+padding/2, w-padding/2]);
+	let xMap = function (d){return xScale(d.key)};
+	let xAxis = d3.axisBottom(xScale);
+
+	let yScale = d3.scaleLinear()
+	.domain([minY, maxY])
+	.range([h-padding/2, 0+padding/2]); //inverte asse Y 
+	let yMap = function (d){return yScale(d.values.length)};
+	let yAxis = d3.axisLeft(yScale)
+	 .tickValues(["min", "max"]);  
+	console.log(yAxis);
+	svg.selectAll(".dot")
+		.data(groups)
+	  .enter().append("circle")
+	  .attr("class", "dot")
+		.attr("r", 3.5)
+	  .attr("cx", xMap)
+	  .attr("cy", yMap)
+	    .append("g")
+    .attr("transform", "translate(0,30)")
+    .call(yAxis);
+}
+
 function initializeStatViz(){
 	graphView=false;	
-	var h=400;
-	var w=982;
-  const padding=30;
+	var h=600;
+	var w=800;
+  const padding=60;
 	d3.select("svg").remove();
-	
-	svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
-        .append("svg")
-        .attr("class", "svg-container")
- 				.attr("width", w)
- 				.attr("height", h);
+	$('#stats').remove();
+		let main = document.getElementById("viz");
+  	var html = '<div id="stats"><button id="pathLenths" onClick="pathLength()">Path lengths</button></stats>';
+  	$(main).append(html);
 
+  svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
+     .append("svg")
+     .attr("class", "svg-container")
+ 		 .attr("width", w)
+ 		 .attr("height", h);
 }
 
 function parse(data){
@@ -142,7 +217,7 @@ function sortAndMakePath(data){
     	return 1;
   	}
   	return 0;
-		});
+	});
 
 	let arrayPath=[];
 	let singlePath=new Object();
@@ -173,12 +248,12 @@ function sortAndMakePath(data){
 }
 
 function drawPath(data){
-	actualVized=data;
-	let div = d3.select("#viz").append("div")	
+	let div=d3.select("#viz").append("div")	
     .attr("class", "tooltip")				
     .style("opacity", 0);
-  //console.log("extracting the path:");
-  let start =pathExtractor(data);
+  
+  let start=pathExtractor(data);
+
 	let edges=svg.selectAll("polyline")
 		.data(start);
 
@@ -229,8 +304,8 @@ function pathExtractor(data){
   return responce;
 }
 
-function getCoord(pointToFind){ //cerca in dataStore[1] le coord di data.path
-	let onlySearchedPoint=dataStore[1].filter(element => element.fullname===pointToFind);
+function getCoord(pointToFind){ //cerca tra l'array di coordinate dei punti (mappate alla grandezza dell'svg) quelle di data.path
+	let onlySearchedPoint=mappedCoord.filter(element => element.fullname===pointToFind);
 	return(onlySearchedPoint[0].coord);
 }
 
@@ -241,22 +316,7 @@ function filter(){
 	let paths=sortAndMakePath(timeFiltered);
 	let lengthFilteredPaths=lengthFilter(paths);
 	actualData=lengthFilteredPaths;
-	console.log(lengthFilteredPaths);
-	let max=d3.max(lengthFilteredPaths, function(d){return d.path.length});
-	//let avgPathLen= mean...
-  console.log(max);
-  //reduce function: d3min, max, sum, extends.. sono fatte trmaite reduce. Es: sommatoria dei valor:
-  //sum = aggregated from previous steps
-  let initialValue=0;
-  let totalPathLength = lengthFilteredPaths.reduce(function(sum, d) {return sum+d.path.length}, initialValue);
-  console.log(totalPathLength);
-  //group: trova un indicatore per un gruppo di dati: es, un record type
-  //es nesting già in d3
-  let groups=d3.nest()
-  	.key(function(d) {return d.path.length>10;})
-  	.entries(lengthFilteredPaths);
-
-  console.log(groups);  
+	
 }
 
 function drawGraph(){
@@ -278,23 +338,16 @@ function seeStats(){
   	graphView=false;
   }
 	if (actualData.length>0) {
-		statViewTest(actualData);
+		
 	}
 	else {
 		alert("no data to viz!")
 	}
 }
 
-function statViewTest(data){
-	alert("stat view test :)");
-}
-
 function lengthFilter(data){
-	console.log(data);
   let e = document.getElementById("pathLenghtList");
 	let selectedValue = e.options[e.selectedIndex].value;
-	//let parsedLength=parseInt(length, 10);
-	//console.log(parsedLength);
 	if(selectedValue==="0"){
 		return data;
 	}
