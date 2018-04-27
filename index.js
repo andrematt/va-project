@@ -1,10 +1,27 @@
 /*  
-
-	 //reduce function: d3min, max, sum, extends.. sono fatte trmaite reduce. Es: sommatoria dei valor:
+ //map reduce process: map è una specie di pipeline, usata spesso con reduce: si mappa un set di data in uno (o più) values.
+ //reduce functions: sono sia in d3, sia esistono in d3. d3min, max, sum, extends.. sono fatte trmaite reduce. Es: sommatoria dei valor:
   //sum = aggregated from previous steps
   let initialValue=0;
   let totalPathLength = actualData.reduce(function(sum, d) {return sum+d.path.length}, initialValue);
 
+	nest: array di raggruppamenti
+	.rollup: riduzione di tutti i valori in function(d): prima si raggruppa, poi per ogni content di "values" si può passare il content alla funct rollup
+	per es trovare il min di tutti, o la media
+
+	
+	precompilare le operazioni stile olep per rendere le operazioni più veloci: crossfilter (linked display)
+	lo fa muovendo la complessità da tempo a spazio: fa tutto prima e salva in memoria
+	nella solita var che contiene crossfilter si possono accumulare vari filtraggi/grouping (es dimension raggruppa per una dimensione) del db
+
+	usare per fare un barchart scrollabile di traffico per data (traffico totale per lun, etc) e sotto raggruppamenti per mese/anno
+
+*/
+
+
+
+
+/*
 problema: individuare dei pattern insoliti in un dataset di spostamenti
 
 suddivisibile in:
@@ -22,7 +39,7 @@ let actualData=[]; //dati in uso per la visualizzazione
 let mappedCoord=[]; //mapping di coordinate a dimenzioni svg
 let svg;
 let nodes;
-let graphView=true;
+let viewType=0;  //0 = graph, 1 = path length
 
 function fetchData(){
 	const urlSensor="data/sensor.csv";
@@ -44,12 +61,11 @@ function fetchData(){
 function initializeViz(){
 	var h=800;
 	var w=800;
-  const padding=60;
+  const padding=70;
   d3.select("svg").remove();
 
-  let div = d3.select("#viz").append("div")	
-    .attr("class", "tooltip")				
-    .style("opacity", 0);
+  //NO! fare che la crea quando ci vai sopra e la distrugge dopo
+
 	
 	svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
         .append("svg")
@@ -98,18 +114,24 @@ let yAxis = d3.axisBottom(yScale);
 		.attr("r", 7)
 		.attr("cx", xMap)
     .attr("cy", yMap)
-		.on("mouseover", function(d) {		
+		.on("mouseover", function(d) {
+			  let div = d3.select("#viz").append("div")	//div tooltip creato al momento e rimosso con mouseout
+    			.attr("class", "tooltip")				
+    			.style("opacity", 0);		
       div.transition() //si può fare classe css della transition?		
           .duration(200)		
           .style("opacity", .9);		
-     	div .html(d.type +" "+d.value)
+     	div.html(d.type +" "+d.value)
      		  .style("left", (d3.event.pageX) + "px")		
           .style("top", (d3.event.pageY - 28) + "px");		
      })					
     .on("mouseout", function(d) {		
-      div.transition()		
+    	div = d3.select(".tooltip")
+      	.transition()		
          .duration(500)		
-         .style("opacity", 0);	
+         .style("opacity", 0)	
+         .remove();	
+
      });
 
 	svg.selectAll("circle")
@@ -135,10 +157,10 @@ let yAxis = d3.axisBottom(yScale);
 	});
 }
 
-function pathLength(){
+function drawPathLength(){
 	let w = 800;
 	let h = 400;
-	let padding=60;
+	const padding=70;
 	
   let groups=d3.nest() //raggruppa i dati per lunghezza del path
   	.key(function(d) {return d.path.length;})
@@ -150,40 +172,65 @@ function pathLength(){
 	let minY=d3.min(groups, function(d){return d.values.length});
 
 	let xScale = d3.scaleLinear()
-		.domain([minX, maxX])
+		.domain([0, maxX+1])
 		.range([0+padding/2, w-padding/2]);
 	let xMap = function (d){return xScale(d.key)};
 	let xAxis = d3.axisBottom(xScale);
 
 	let yScale = d3.scaleLinear()
-	.domain([minY, maxY])
+	.domain([0, maxY])
 	.range([h-padding/2, 0+padding/2]); //inverte asse Y 
 	let yMap = function (d){return yScale(d.values.length)};
-	let yAxis = d3.axisLeft(yScale)
-	 .tickValues(["min", "max"]);  
-	console.log(yAxis);
+	let yAxis = d3.axisLeft(yScale);
+	 //.tickValues([10, 20, 30]);  
+
+	 function yGrid() {
+	 console.log("grid!");		
+    return d3.axisLeft(yScale)
+        .ticks(5)
+		}
+
+
+
+	  svg.append("g")			
+      .attr("class", "grid")
+      .call(yGrid()
+          .tickSize(-w)
+          .tickFormat("")
+      )
+
+	 svg.append("g") 
+	 	 .attr("transform", "translate("+(padding/2)+",0)")
+	 		.call(yAxis);
+
+	  svg.append("g")
+	 	 .attr("transform", "translate(0,"+ (h-padding/2)+")")
+	 	.call(xAxis);
+		
+
+
 	svg.selectAll(".dot")
 		.data(groups)
 	  .enter().append("circle")
 	  .attr("class", "dot")
 		.attr("r", 3.5)
 	  .attr("cx", xMap)
-	  .attr("cy", yMap)
-	    .append("g")
-    .attr("transform", "translate(0,30)")
-    .call(yAxis);
+	  .attr("cy", yMap);
 }
 
 function initializeStatViz(){
-	graphView=false;	
+	viewType=1; 
 	var h=600;
 	var w=800;
   const padding=60;
 	d3.select("svg").remove();
+	
+	/*
 	$('#stats').remove();
 		let main = document.getElementById("viz");
   	var html = '<div id="stats"><button id="pathLenths" onClick="pathLength()">Path lengths</button></stats>';
   	$(main).append(html);
+	*/
 
   svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
      .append("svg")
@@ -320,9 +367,11 @@ function filter(){
 }
 
 function drawGraph(){
-	 if(!graphView){
+	
+	
+	if(viewType!==0){
+  	viewType=0;
   	initializeViz();
-  	graphView=true;
   }
 	if (actualData.length>0) {
 		drawPath(actualData);
@@ -332,11 +381,13 @@ function drawGraph(){
 	}
 }
 
-function seeStats(){
-	 if(graphView){
-  	initializeStatViz();
-  	graphView=false;
+function seePathStats(){
+	 if(viewType!==1){
+  	viewType=1;
   }
+  	initializeStatViz();
+  	drawPathLength();
+  
 	if (actualData.length>0) {
 		
 	}

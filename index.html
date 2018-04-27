@@ -14,10 +14,15 @@
 <body>
 	<div class="wrapper">
 		<div class="title"><h1>VAST mini challenge 1</h1></div>
+    <div class="button-bar"><h4>Viz Type</h4>
+        <button id="drawGraph" onClick="drawGraph()">Draw Graph</button>
+        <button id="drawPath" onClick="seePathStats()">Draw Path Lengths</button>
+        <button id="drawDayspan" onClick="">Draw Path Dayspan</button>
+    </div> <!-- button-bar -->    
 	<div class="main" id="mainScreen">
 		<div id="viz"></div>
     </div>
-    <div class="left-box-1"><h4>Vehicle Type</h4>
+    <div class="left-box-1"><h4>Vehicle type filter</h4>
         <select id="vehicleTypeList">
             <option value="1" selected>1 axis</option>
             <option value="2">2 axis</option>
@@ -26,9 +31,9 @@
             <option value="4">4 axis</option>
             <option value="5">5 axis</option>
         </select>
-        <button id="singleVehicleViz" onClick="filter()">Filter</button>
+        <button id="singleVehicleViz" onClick="filter()">Apply</button>
     </div> <!-- left-box-1 -->
-    <div class="left-box-2"><h4>Time span</h4>
+    <div class="left-box-2"><h4>Time span filter</h4>
         <select id="yearList">
             <option value="0" selected>All years</option>
             <option value="2015">2015</option>
@@ -59,9 +64,9 @@
             <option value="6">Saturnday</option>
             <option value="0">Sunday</option>
         </select>    
-        <button id="filter" onClick="filter()">filter</button>
+        <button id="filter" onClick="filter()">Apply</button>
     </div> <!-- left-box-2 -->
-    <div class="left-box-3"><h4>Path length</h4>
+    <div class="left-box-3"><h4>Path length filter</h4>
         <select id="pathLenghtList">
             <option value="0" selected>All lengths</option>
             <option value="1">< 5</option>
@@ -70,12 +75,9 @@
             <option value="4">25 - 35</option>
             <option value="5">> 35</option>
         </select>
-        <button id="singleLenghtViz" onClick="filter()">filter</button>
+        <button id="singleLenghtViz" onClick="filter()">Apply</button>
     </div> <!-- left-box-3 -->
-      <div class="left-box-4"><h4>Viz Type</h4>
-        <button id="drawGraph" onClick="drawGraph()">Draw Graph</button>
-        <button id="seeStats" onClick="seeStats()">See Stats</button>
-    </div> <!-- left-box-4 -->
+
 </div><!-- wrapper -->
     <script>fetchData();</script>
 </body>
