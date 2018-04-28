@@ -61,7 +61,7 @@ function fetchData(){
 function initializeViz(){
 	var h=800;
 	var w=800;
-  const padding=70;
+  const padding=80;
   d3.select("svg").remove();
 
   //NO! fare che la crea quando ci vai sopra e la distrugge dopo
@@ -160,7 +160,7 @@ let yAxis = d3.axisBottom(yScale);
 function drawPathLength(){
 	let w = 800;
 	let h = 400;
-	const padding=70;
+	let padding=80;
 	
   let groups=d3.nest() //raggruppa i dati per lunghezza del path
   	.key(function(d) {return d.path.length;})
@@ -173,43 +173,52 @@ function drawPathLength(){
 
 	let xScale = d3.scaleLinear()
 		.domain([0, maxX+1])
-		.range([0+padding/2, w-padding/2]);
+		.range([padding, w-padding/2]);
 	let xMap = function (d){return xScale(d.key)};
 	let xAxis = d3.axisBottom(xScale);
 
 	let yScale = d3.scaleLinear()
 	.domain([0, maxY])
-	.range([h-padding/2, 0+padding/2]); //inverte asse Y 
+	.range([h-padding/2, 0+padding/2]); //inverte asse Y
 	let yMap = function (d){return yScale(d.values.length)};
 	let yAxis = d3.axisLeft(yScale);
 	 //.tickValues([10, 20, 30]);  
 
-	 function yGrid() {
-	 console.log("grid!");		
+	function yGrid() {	
     return d3.axisLeft(yScale)
         .ticks(5)
-		}
+	}
 
-
-
-	  svg.append("g")			
+	//appende il raggruppamento dei tick che disegnano le linee orizzontali della griglia
+	  svg.append("g")
       .attr("class", "grid")
+      .attr("transform", "translate("+(padding)+",0)") //trasla come l'asse y
       .call(yGrid()
-          .tickSize(-w)
-          .tickFormat("")
-      )
+          .tickSize(-w+(padding*1.5)) //lunghezza *1.5 perchè sul lato sx è lasciato un padding intero
+          .tickFormat("") //etichette delle linee della griglia
+      );
 
-	 svg.append("g") 
-	 	 .attr("transform", "translate("+(padding/2)+",0)")
+	 svg.append("g")
+      .attr("class", "y-axis")
+	 	 .attr("transform", "translate("+(padding)+",0)") //traslato di un paddin intero per lasciare spazio all'etichetta dell'asse
 	 		.call(yAxis);
 
 	  svg.append("g")
+      .attr("class", "x-axis")
 	 	 .attr("transform", "translate(0,"+ (h-padding/2)+")")
 	 	.call(xAxis);
-		
+			
+  svg.append("text")             
+      .attr("transform", "translate(" + (w-(padding*1.5)) + " ," + (h) + ")")
+      .text("Path length");
 
+   svg.append("text")             
+      .attr("transform", "translate(" + (padding/3) + " ," + (h/2+padding/2) + ") rotate(270)") //non si può mettere la rotazione in una dichiarazione separata altrimenti sovrascrive la precedente trasformazione
+      .text("Elements");
 
-	svg.selectAll(".dot")
+   svg.append("g")
+      .attr("class", "dots-group")
+	  .selectAll(".dot")
 		.data(groups)
 	  .enter().append("circle")
 	  .attr("class", "dot")
@@ -220,9 +229,9 @@ function drawPathLength(){
 
 function initializeStatViz(){
 	viewType=1; 
-	var h=600;
-	var w=800;
-  const padding=60;
+	let h=600;
+	let w=800;
+  let padding=80;
 	d3.select("svg").remove();
 	
 	/*
