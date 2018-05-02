@@ -32,6 +32,13 @@ suddivisibile in:
 		-grafico di lunghezza dei percorsi
 		-nelle tooltip, stats sul tipo di veicoli che attraversano quel gate
 		-max e min path length per ogni tipo di veicolo
+
+TODO: 
+- box in alto con filtri attivi
+- possibilità di non filtrare per n assi
+- visualizzazione per singolo punto sulla mappa, stat di chi lo attaversa
+es https://hpbl.github.io/VAST-MC1/visualizations.html
+
 */
 
 let dataStore=[]; //dati letti da file
@@ -39,7 +46,10 @@ let actualData=[]; //dati in uso per la visualizzazione
 let mappedCoord=[]; //mapping di coordinate a dimenzioni svg
 let svg;
 let nodes;
-let viewType=0;  //0 = graph, 1 = path length
+let viewType=0;  //0 = graph, 1 = path length, 2 = path crossing
+const padding=80;
+	var h=800; //dimenzioni di default dell'svg, possono cambiare
+	var w=800;
 
 function fetchData(){
 	const urlSensor="data/sensor.csv";
@@ -50,48 +60,54 @@ function fetchData(){
 		if (values[0]&&values[1]) {
   		dataStore.push(values[0]);
   		dataStore.push(values[1]);
-			initializeViz(values)
+			initializePathViz();
+			initializeNodes();
 		}
 		else {
 			throw new Error("error fetching data!");
 		}
 	});
 }
-	
-function initializeViz(){
-	var h=800;
-	var w=800;
-  const padding=80;
-  d3.select("svg").remove();
 
-  //NO! fare che la crea quando ci vai sopra e la distrugge dopo
+function appendSvg(h, w){
+	d3.select("svg").remove(); //rimuove la precedente viz
+  svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
+     .append("svg")
+     .attr("class", "svg-container")
+ 		 .attr("width", w)
+ 		 .attr("height", h);
+ 	//return svg;
+}
 
-	
-	svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
-        .append("svg")
-        .attr("class", "svg-container")
- 				.attr("width", w)
- 				.attr("height", h);
-
- 	let maxX=d3.max(dataStore[1], function(d){return d.coord[0]});
-	let minX=d3.min(dataStore[1], function(d){return d.coord[0]});
-	let maxY=d3.max(dataStore[1], function(d){return d.coord[1]});
-	let minY=d3.min(dataStore[1], function(d){return d.coord[1]});
-
+function xScalePoints(minX, maxX){ //restituisce una scala con rapporto tra il dominio (valori min e max) e range (larghezza dell'svg - il padding)
 	let xScale = d3.scaleLinear()
 		.domain([minX, maxX])
-		.range([0+padding/2, 800-padding/2]);
-	let xMap = function (d){return xScale(d.coord[0])};
-	let xAxis = d3.axisBottom(xScale);
-
-let yScale = d3.scaleLinear()
+		.range([0+padding/2, w-padding/2]);
+	return xScale;
+}
+	
+function yScalePoints(minY, maxY){ //stesso ma per l'altezza
+	let yScale = d3.scaleLinear()
 	.domain([minY, maxY])
-	.range([0+padding/2, 800-padding/2]);
-let yMap = function (d){return yScale(d.coord[1])};
-let yAxis = d3.axisBottom(yScale);			
+	.range([0+padding/2, h-padding/2]);
+	return yScale;	
+}
 
-	//approfitto delle funzioni xScale e Yscale per salvare le coordinate mappate alle dimenzioni dell'svg, per riusarle dopo per i path
-	mappedCoord=dataStore[1].map(function (d){
+function xScalePointsLength(n){ //rapporto tra n dei punti (lunghezza passata) e larghezza dell'svg
+		let xScale = d3.scaleLinear()
+		.domain([1, n])
+		.range([1+padding/2, w-padding/2]);
+	return xScale;
+}
+
+function xScaleMapLength(n){
+let xScale = xScalePointsLength(0,n);
+let xMap = function (d, i){return xScale(i)}; //mappa semplicemente in base all'indice dell'array
+return xMap;
+}
+
+function mapCoord(xScale, yScale){ //viene eseguito solo la prima volta: salva un array con le coordinate mappate a height e width dell'svg
+		mappedCoord=dataStore[1].map(function (d){
 		let scaledCoord=[];
 		let cloned=[];
 		scaledCoord[0]=xScale(d.coord[0]);
@@ -104,36 +120,9 @@ let yAxis = d3.axisBottom(yScale);
 		};
 		return(singleObj);
 	});
+}
 
- 	nodes=svg.selectAll("circle")
-		.data(dataStore[1]);
-
-	nodes.enter()
-		.append("circle")
-		.attr("stroke", "black")
-		.attr("r", 7)
-		.attr("cx", xMap)
-    .attr("cy", yMap)
-		.on("mouseover", function(d) {
-			  let div = d3.select("#viz").append("div")	//div tooltip creato al momento e rimosso con mouseout
-    			.attr("class", "tooltip")				
-    			.style("opacity", 0);		
-      div.transition() //si può fare classe css della transition?		
-          .duration(200)		
-          .style("opacity", .9);		
-     	div.html(d.type +" "+d.value)
-     		  .style("left", (d3.event.pageX) + "px")		
-          .style("top", (d3.event.pageY - 28) + "px");		
-     })					
-    .on("mouseout", function(d) {		
-    	div = d3.select(".tooltip")
-      	.transition()		
-         .duration(500)		
-         .style("opacity", 0)	
-         .remove();	
-
-     });
-
+function colorNodes(){
 	svg.selectAll("circle")
 	.attr("fill", function(d){
 		if(d.type==='ranger-stop'){
@@ -157,11 +146,78 @@ let yAxis = d3.axisBottom(yScale);
 	});
 }
 
+function drawNodes(xMap, yMap){
+	nodes=svg.selectAll("circle")
+		.data(dataStore[1]);
+
+	nodes.enter()
+		.append("circle")
+		.attr("stroke", "black")
+		.attr("r", 7)
+		.attr("cx", xMap)
+    .attr("cy", yMap)
+		.on("mouseover", function(d) {
+			  let div = d3.select("#viz").append("div")	//div tooltip creato al momento e rimosso con mouseout
+    			.attr("class", "tooltip")				
+    			.style("opacity", 0);		
+      div.transition() //si può fare classe css della transition?		
+          .duration(200)		
+          .style("opacity", .9);		
+     	div.html(d.type +" "+d.value)
+     		  .style("left", (d3.event.pageX) + "px")		
+          .style("top", (d3.event.pageY - 28) + "px");		
+     })					
+    .on("mouseout", function(d) {		
+    	div = d3.selectAll(".tooltip")
+      	.transition()		
+         .duration(500)		
+         .style("opacity", 0)	
+         .remove();	
+
+     });
+}
+
+function xScaleMap(minX,maxX){
+let xScale = xScalePoints(minX,maxX);
+let xMap = function (d){return xScale(d.coord[0])};
+return xMap;
+}
+
+function yScaleMap(minY,maxY){
+	let yScale = yScalePoints(minY,maxY);
+	let yMap = function (d){return yScale(d.coord[1])};
+	return yMap;
+}
+
+function initializeNodes(){
+	let maxX=d3.max(dataStore[1], function(d){return d.coord[0]});
+	let minX=d3.min(dataStore[1], function(d){return d.coord[0]});
+	let maxY=d3.max(dataStore[1], function(d){return d.coord[1]});
+	let minY=d3.min(dataStore[1], function(d){return d.coord[1]});
+
+	let xScale = xScalePoints(minX,maxX);
+	let xMap=xScaleMap(minX,maxX);
+
+	let yScale = yScalePoints(minY,maxY);
+	let yMap = yScaleMap(minY,maxY);
+		
+
+	if (mappedCoord.length===0){ //mappa le coordinate originali dei punti alle dimenzioni effettive dell'svg (se non è stato già fatto)
+		mapCoord(xScale, yScale);
+	}
+
+ 		drawNodes(xMap, yMap);
+    colorNodes();
+
+}
+
+function initializePathViz(){
+	var h=800;
+	var w=800;
+	appendSvg(h,w);
+}
+
 function drawPathLength(){
-	let w = 800;
-	let h = 400;
-	let padding=80;
-	
   let groups=d3.nest() //raggruppa i dati per lunghezza del path
   	.key(function(d) {return d.path.length;})
   	.entries(actualData);
@@ -200,7 +256,7 @@ function drawPathLength(){
 
 	 svg.append("g")
       .attr("class", "y-axis")
-	 	 .attr("transform", "translate("+(padding)+",0)") //traslato di un paddin intero per lasciare spazio all'etichetta dell'asse
+	 	 .attr("transform", "translate("+(padding)+",0)") //traslato di un padding intero per lasciare spazio all'etichetta dell'asse
 	 		.call(yAxis);
 
 	  svg.append("g")
@@ -229,23 +285,18 @@ function drawPathLength(){
 
 function initializeStatViz(){
 	viewType=1; 
-	let h=600;
-	let w=800;
-  let padding=80;
-	d3.select("svg").remove();
-	
-	/*
-	$('#stats').remove();
-		let main = document.getElementById("viz");
-  	var html = '<div id="stats"><button id="pathLenths" onClick="pathLength()">Path lengths</button></stats>';
-  	$(main).append(html);
-	*/
+	h=600;
+	w=800;
+	appendSvg(h,w);
+}
 
-  svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
-     .append("svg")
-     .attr("class", "svg-container")
- 		 .attr("width", w)
- 		 .attr("height", h);
+
+
+function initializeCrossingViz(){
+	viewType=2; 
+	h=800;
+	w=800;
+  appendSvg(h,w);
 }
 
 function parse(data){
@@ -304,10 +355,6 @@ function sortAndMakePath(data){
 }
 
 function drawPath(data){
-	let div=d3.select("#viz").append("div")	
-    .attr("class", "tooltip")				
-    .style("opacity", 0);
-  
   let start=pathExtractor(data);
 
 	let edges=svg.selectAll("polyline")
@@ -328,21 +375,6 @@ function drawPath(data){
     .attr("points", function(d, i){
     	return d;
   	})
-  	.on("mouseover", function(d, i) {		
-  		console.log(d);
-  		console.log(i);
-      div.transition()
-          .duration(200)		
-          .style("opacity", .9);		
-     	div .html("Path tooltip!!!")
-     		  .style("left", (d3.event.pageX) + "px")		
-          .style("top", (d3.event.pageY - 28) + "px");		
-     })					
-    .on("mouseout", function(d) {		
-      div.transition()		
-         .duration(500)		
-         .style("opacity", 0);	
-     });  
 }
 
 function pathExtractor(data){
@@ -372,37 +404,52 @@ function filter(){
 	let paths=sortAndMakePath(timeFiltered);
 	let lengthFilteredPaths=lengthFilter(paths);
 	actualData=lengthFilteredPaths;
-	
+}
+
+function drawClickableNodes(){
+	let xMap=xScaleMapLength(dataStore[1].length);
+	console.log(xMap);
+	let yMap = padding; // i nodi sono posizionati in linea
+	drawNodes(xMap, yMap); //risua la funzione per disegnare i nodi ma con una diversa mappatura
+	colorNodes(); //i colori sono gli stessi
+	return;
 }
 
 function drawGraph(){
-	
-	
 	if(viewType!==0){
   	viewType=0;
-  	initializeViz();
+  	initializePathViz();
+  	initializeNodes();
   }
-	if (actualData.length>0) {
-		drawPath(actualData);
+	if (actualData.length===0) {
+		alert("no data to viz!");
+		return;
 	}
-	else {
-		alert("no data to viz!")
-	}
+	drawPath(actualData);
 }
 
-function seePathStats(){
+function drawPathStats(){
 	 if(viewType!==1){
   	viewType=1;
   }
-  	initializeStatViz();
-  	drawPathLength();
-  
-	if (actualData.length>0) {
-		
-	}
-	else {
-		alert("no data to viz!")
-	}
+  if (actualData.length===0){
+  	alert("no data to viz!");
+  	return;
+  }
+  initializeStatViz();
+  drawPathLength();
+  }
+
+function drawPathCrossing(){
+	if(viewType!==2){
+  	viewType=2;
+  }
+  if (actualData.length===0){
+  	alert("no data to viz!");
+  	return;
+  }
+  initializeCrossingViz();
+  drawClickableNodes();
 }
 
 function lengthFilter(data){
