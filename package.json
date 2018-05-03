@@ -1,5 +1,5 @@
 {
-  "name": "va course - vast mc 1",
+  "name": "pathviewer-vast2017",
   "version": "1.0.0",
   "description": "vast 2017 mini challenge 1 for VA course",
   "main": "index.js",
@@ -9,7 +9,10 @@
   "author": "andrematt",
   "license": "ISC",
   "dependencies": {
+    "crossfilter": "^1.3.12",
     "d3": "^5.0.0",
+    "dc": "^3.0.0",
+    "express": "^4.16.3",
     "jquery": "^3.3.1"
   }
 }
