@@ -1,6 +1,11 @@
 /*
  colori: se scegli un colore di riferimento e tagli gli altri, puoi mappare il colore scelto fino all'opposto tra 0 e 1 (per dviergent color scale)
 */
+/*
+#dc-lengths-chart.bar{
+  visibility:hidden;
+}
+*/
 
 .wrapper {
   display: grid;
