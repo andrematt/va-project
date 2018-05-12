@@ -73,11 +73,32 @@ function fetchData(){
 	})
 }
 
+function parseVehicleType(d){
+		if (d.vehicleType=="1"){
+      		return 0;
+      	}
+      	else if (d.vehicleType=="2"){
+      		return 1;
+      	}
+      	else if (d.vehicleType=="2P"){
+      		return 2;
+      	}
+      	else if (d.vehicleType=="3"){
+      		return 3;
+      	}
+      	else if (d.vehicleType=="4"){
+      		return 4;
+      	}
+      	else if (d.vehicleType=="5"){
+      		return 5;
+      	}
+}
+
 
 function pathStats(data){
 	
 	let h = 250;
-	let w = 600;
+	let w = 650;
 	let maxX=d3.max(data, function(d){return d.pathLength});
 	let yValues=d3.nest()
   		.key(function(d) { return d.pathLength;})
@@ -94,7 +115,11 @@ function pathStats(data){
       path =paths.dimension(function(d) { return d.path; }),
       pathLength = paths.dimension(function(d){ return d.pathLength; }),
       lengths=pathLength.group();
-      type = paths.dimension(function(d) { return +d.vehicleType; }),
+      type = paths.dimension(function(d) {
+      	return parseVehicleType(d);
+      	//eturn +d.vehicleType; 
+      }),
+
       types = type.group();
        topTypes = types.top(1);
 topTypes[0].key; // the top payment type (e.g., "tab")
@@ -110,10 +135,13 @@ topTypes[0].value; // the count of payments of that type (e.g., 8)
 	 .transitionDuration(0)
      .centerBar(true)	
 	 .y(d3.scaleLog().domain([1,maxY]))                               // bar width Keep increasing to get right then back off.
+     //.y(d3.scaleLinear().domain([1,maxY])) 
      .x(d3.scaleLinear().domain([0, maxX+2]))
 	 .xAxis().tickFormat(function(v) {return v;});
 
-	 lengthsChart.on("renderlet", function(chart){ //dc non supporta le scale log (https://github.com/dc-js/dc.js/issues/477): hack orrendo per modificarle le barre dopo che sono state renderizzate
+
+	 
+	 lengthsChart.on("renderlet", function(chart){ //dc non supporta le scale log (https://github.com/dc-js/dc.js/issues/477): hack orrendo per modificarle l'altezza delle bar dopo che sono state renderizzate
     	chart.selectAll("g .bar")		
             .attr("y", function(d) {
              	if (d.y === 1) {
@@ -131,6 +159,8 @@ topTypes[0].value; // the count of payments of that type (e.g., 8)
             });
 		});
 
+		
+
 	  let vehiclesChart = dc.rowChart("#dc-vehicles-chart");
 
       vehiclesChart.width(w)
@@ -141,22 +171,22 @@ topTypes[0].value; // the count of payments of that type (e.g., 8)
     .ordinalColors(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])							// the values on the y axis
 	.transitionDuration(500)
 	.label(function (d){
-      	if (d.key===1){
+      	if (d.key===0){
       		return "1 axis";
       	}
-      	else if (d.key==2){
+      	else if (d.key==1){
       		return "2 axis";
       	}
-      	else if (d.key==3){
+      	else if (d.key==2){
       		return "2 axis ranger";
       	}
-      	else if (d.key==4){
+      	else if (d.key==3){
       		return "3 axis";
       	}
-      	else if (d.key==5){
+      	else if (d.key==4){
       		return "4 axis";
       	}
-      	else if (d.key==6){
+      	else if (d.key==5){
       		return "5 axis";
       	}
     })
@@ -209,8 +239,9 @@ function prepareForCrossfilter(data){ //fare funzionare questa roba con dati pas
 }
 
 function appendSvg(h, w){
+	console.log("appendo svg");
 	d3.select("svg").remove(); //rimuove la precedente viz
-  svg = d3.select("#viz") //salva svg in global per poterlo riusare dopo
+  svg = d3.select("#single-point-viz") //salva svg in global per poterlo riusare dopo
      .append("svg")
      .attr("class", "svg-container")
  		 .attr("width", w)
@@ -710,5 +741,6 @@ function timeFilter(data){
 	}
 	return dayFiltered;
 }
+
 
 loadAll();

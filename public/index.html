@@ -17,12 +17,11 @@
 	<div class="wrapper">
 		<div class="title"><h1>VAST mini challenge 1</h1></div>
     <div class="button-bar"><h4>Viz Type</h4>
-        <button id="drawGraph" onClick="drawGraph()">Draw Graph</button>
-        <button id="drawPathStats" onClick="drawPathStats()">Draw Path Lengths</button>
-        <button id="drawCrossings" onClick="drawPathCrossing()">Draw Path Crossings</button>
+        <button id="drawGraph" onClick="">Single Point Analisys</button>
+        <button id="drawPathStats" onClick="">Path Analisys</button>
     </div> <!-- button-bar -->    
 	<div class="main" id="mainScreen">
-		<div id="viz"></div>
+		<div id="single-point-viz"></div>
          <div class='test' id='dc-lengths-chart'>
             <h4>lengths chart</h4>
         </div>
@@ -32,61 +31,10 @@
 
 
     </div>
-    <div class="left-box-1"><h4>Vehicle type filter</h4>
-        <select id="vehicleTypeList">
-            <option value="1" selected>1 axis</option>
-            <option value="2">2 axis</option>
-            <option value="2P">2 axis Ranger</option>
-            <option value="3">3 axis</option>
-            <option value="4">4 axis</option>
-            <option value="5">5 axis</option>
-        </select>
-        <button id="singleVehicleViz" onClick="filter()">Apply</button>
+    <div class="left-box-1"><h4>Info box</h4>
     </div> <!-- left-box-1 -->
-    <div class="left-box-2"><h4>Time span filter</h4>
-        <select id="yearList">
-            <option value="0" selected>All years</option>
-            <option value="2015">2015</option>
-            <option value="2016">2016</option>
-        </select>
-         <select id="monthList">
-            <option value="0" selected>All months</option>
-             <option value="01">January</option>
-            <option value="02">Febrary</option>
-            <option value="03">March</option>
-            <option value="04">April</option>
-            <option value="05">May</option>
-            <option value="06">June</option>
-            <option value="07">July</option>
-            <option value="08">August</option>
-            <option value="09">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-        </select>
-        <select id="dayList">
-            <option value="-1" selected>All days</option>
-             <option value="1">Monday</option>
-            <option value="2">Tuesday</option>
-            <option value="3">Wednesday</option>
-            <option value="4">Thursday</option>
-            <option value="5">Friday</option>timeStat
-            <option value="6">Saturnday</option>
-            <option value="0">Sunday</option>
-        </select>    
-        <button id="filter" onClick="filter()">Apply</button>
+    <div class="left-box-2"><h4>More info</h4>
     </div> <!-- left-box-2 -->
-    <div class="left-box-3"><h4>Path length filter</h4>
-        <select id="pathLenghtList">
-            <option value="0" selected>All lengths</option>
-            <option value="1">< 5</option>
-            <option value="2">5 - 15</option>
-            <option value="3">15 - 25</option>
-            <option value="4">25 - 35</option>
-            <option value="5">> 35</option>
-        </select>
-        <button id="singleLenghtViz" onClick="filter()">Apply</button>
-    </div> <!-- left-box-3 -->
 
 </div><!-- wrapper -->
     <script>fetchData()</script>
