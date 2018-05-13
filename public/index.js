@@ -7,30 +7,14 @@ let pathData=[]; //array di paths non filtrati per essere usato con crossfitler
 let svg;
 let viewType=0;  //0 = graph, 1 = path length, 2 = path crossing
 const padding=80;
-	var h=400; //dimenzioni di default dell'svg, possono cambiare
-	var w=400;
 
 
-
-
-function testCallback(){
-	const urlDB = 'http://localhost:3000/sensors';
-	let allPoints=fetch(urlDB).then((resp) => resp.json());
-	allPoints.then(function(value) {
- 		console.log(value);
- 	});
-
-	/* 	
- 	let query = 'http://localhost:3000/sensor/entrance0';
-	let singlePoint=fetch(query).then((resp) => resp.json());
-	singlePoint.then(function(value) {
- 		console.log(value);
- 	})
- 	*/
-}
 
 function pointStats(data){
-
+	 	  	//var xf = crossfilter(pathData);
+	    //console.log(xf.size());	
+	    //let test=nameFilter(name, pathData);
+	    //console.log(test);
 }
 
 function getPointData(gate){
@@ -43,17 +27,7 @@ function getPointData(gate){
 			result.push(val);
 		})
  		pointStats(pathData);
- 	  	//var xf = crossfilter(pathData);
-	    //console.log(xf.size());	
-	    //let test=nameFilter(name, pathData);
-	    //console.log(test);
  	});
- 	
-		//estrai il nome del punto
-		//da dataStore estrai tutti gli attraversamenti di quel punto (filtra actualData con quel nome)
-		//non da actualData! qua i filtri "normali" vengono disattivati, e lavora crossfilter
-		//passa a crossfilter i dati filtrati
-		//costruisci raggruppamenti del traffico per giorno/mese/anno
  	
 }
 
@@ -63,9 +37,7 @@ function fetchData(){
 	pointData.then(function(values){
 		if(values){
 			dataStore=values;
-			initializeViz();
-			initializeNodes();
-			addOnclick();
+			initializePointViz();
 		}
 		else {
 			throw new Error("error fetching data!");
@@ -94,6 +66,41 @@ function parseVehicleType(d){
       	}
 }
 
+function formatVehicleType(d){
+	if (d.key===0){
+      	return "1 axis";
+    }
+    else if (d.key==1){
+      	return "2 axis";
+    }
+    else if (d.key==2){
+    	return "2 axis ranger";
+    }
+    else if (d.key==3){
+      	return "3 axis";
+    }
+    else if (d.key==4){
+      	return "4 axis";
+    }
+    else if (d.key==5){
+      	return "5 axis";
+    }
+
+}
+
+function drawLengthsChart(){
+
+}
+
+function lengthsRenderlet(){
+
+}
+
+function drawVehicleChart(){
+
+
+}
+
 
 function pathStats(data){
 	
@@ -117,13 +124,8 @@ function pathStats(data){
       lengths=pathLength.group();
       type = paths.dimension(function(d) {
       	return parseVehicleType(d);
-      	//eturn +d.vehicleType; 
-      }),
-
+      });
       types = type.group();
-       topTypes = types.top(1);
-topTypes[0].key; // the top payment type (e.g., "tab")
-topTypes[0].value; // the count of payments of that type (e.g., 8)
     
     let lengthsChart = dc.barChart("#dc-lengths-chart");
 
@@ -171,24 +173,7 @@ topTypes[0].value; // the count of payments of that type (e.g., 8)
     .ordinalColors(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])							// the values on the y axis
 	.transitionDuration(500)
 	.label(function (d){
-      	if (d.key===0){
-      		return "1 axis";
-      	}
-      	else if (d.key==1){
-      		return "2 axis";
-      	}
-      	else if (d.key==2){
-      		return "2 axis ranger";
-      	}
-      	else if (d.key==3){
-      		return "3 axis";
-      	}
-      	else if (d.key==4){
-      		return "4 axis";
-      	}
-      	else if (d.key==5){
-      		return "5 axis";
-      	}
+    	 return formatVehicleType(d);
     })
     .elasticX(true);
 
@@ -212,25 +197,6 @@ function loadAll(){
  	});	
 }
 
-function fetchData2(){
-	const urlSensor="../data/sensor.csv";
-	const urlPoints="../data/points.csv";
-	let sensorData=fetch(urlSensor).then((resp) => resp.text());
-	let pointData=fetch(urlPoints).then((resp) => resp.json());
-	Promise.all([sensorData,pointData]).then(function(values){
-		if (values[0]&&values[1]) {
-  		dataStore.push(values[0]);
-  		dataStore.push(values[1]);
-  		prepareForCrossfilter();
-			initializePathViz();
-			initializeNodes();
-		}
-		else {
-			throw new Error("error fetching data!");
-		}
-	});
-}
-
 function prepareForCrossfilter(data){ //fare funzionare questa roba con dati passati
 	//let parsedRoutes=parse(data); non server trasformare da stringa a array
 	console.log(data);
@@ -238,25 +204,24 @@ function prepareForCrossfilter(data){ //fare funzionare questa roba con dati pas
 	//return pathData
 }
 
-function appendSvg(h, w){
-	console.log("appendo svg");
+function appendSvg(h, w, name, appendTo){
 	d3.select("svg").remove(); //rimuove la precedente viz
-  svg = d3.select("#single-point-viz") //salva svg in global per poterlo riusare dopo
+  svg = d3.select("#"+appendTo) //salva svg in global per poterlo riusare dopo
      .append("svg")
+ 	 .attr("id", name)
      .attr("class", "svg-container")
  		 .attr("width", w)
  		 .attr("height", h);
- 	//return svg;
 }
 
-function xScalePoints(minX, maxX){ //restituisce una scala con rapporto tra il dominio (valori min e max) e range (larghezza dell'svg - il padding)
+function xScalePoints(minX, maxX, w){ //restituisce una scala con rapporto tra il dominio (valori min e max) e range (larghezza dell'svg - il padding)
 	let xScale = d3.scaleLinear()
 		.domain([minX, maxX])
 		.range([0+padding/2, w-padding/2]);
 	return xScale;
 }
 	
-function yScalePoints(minY, maxY){ //stesso ma per l'altezza
+function yScalePoints(minY, maxY, h){ //stesso ma per l'altezza
 	let yScale = d3.scaleLinear()
 	.domain([minY, maxY])
 	.range([0+padding/2, h-padding/2]);
@@ -333,11 +298,11 @@ function drawNodes(xMap, yMap){
 	nodes.enter()
 		.append("circle")
 		.attr("stroke", "black")
-		.attr("r", 7)
+		.attr("r", 6)
 		.attr("cx", xMap)
     .attr("cy", yMap)
 		.on("mouseover", function(d) {
-			  let div = d3.select("#viz").append("div")	//div tooltip creato al momento e rimosso con mouseout
+			  let div = d3.select("#single-point-viz").append("div")	//div tooltip creato al momento e rimosso con mouseout
     			.attr("class", "tooltip")				
     			.style("opacity", 0);		
       div.transition() //si può fare classe css della transition?		
@@ -357,51 +322,50 @@ function drawNodes(xMap, yMap){
      });
 }
 
-function xScaleMap(minX,maxX){
-let xScale = xScalePoints(minX,maxX);
+function xScaleMap(minX,maxX, w){
+let xScale = xScalePoints(minX,maxX, w);
 let xMap = function (d){return xScale(d.coord[0])};
 return xMap;
 }
 
-function yScaleMap(minY,maxY){
-	let yScale = yScalePoints(minY,maxY);
+function yScaleMap(minY,maxY, h){
+	let yScale = yScalePoints(minY,maxY, h);
 	let yMap = function (d){return yScale(d.coord[1])};
 	return yMap;
 }
 
-function initializeNodes(){
+function initializeNodes(w, h){
 	let maxX=d3.max(dataStore, function(d){return d.coord[0]});
 	let minX=d3.min(dataStore, function(d){return d.coord[0]});
 	let maxY=d3.max(dataStore, function(d){return d.coord[1]});
 	let minY=d3.min(dataStore, function(d){return d.coord[1]});
 
-	let xScale = xScalePoints(minX,maxX);
-	let xMap=xScaleMap(minX,maxX);
+	let xScale = xScalePoints(minX,maxX, w);
+	let xMap=xScaleMap(minX,maxX, w);
 
-	let yScale = yScalePoints(minY,maxY);
-	let yMap = yScaleMap(minY,maxY);
+	let yScale = yScalePoints(minY,maxY, h);
+	let yMap = yScaleMap(minY,maxY, h);
 		
 
 	if (mappedCoord.length===0){ //mappa le coordinate originali dei punti alle dimenzioni effettive dell'svg (se non è stato già fatto)
 		mapCoord(xScale, yScale);
 	}
 
- 		drawNodes(xMap, yMap);
+ 	drawNodes(xMap, yMap);
     colorNodes();
 
 }
 
-function initializePathViz(){
-	var h=800;
-	var w=800;
-	appendSvg(h,w);
+function initializePointViz(){
+	var h=430;
+	var w=430;
+	let name="point-viz";
+	let appendTo = "points-chart";
+	appendSvg(h,w, name, appendTo);
+	initializeNodes(h,w);
+	addOnclick();
 }
 
-function initializeViz(){
-	var h=800;
-	var w=800;
-	appendSvg(h,w);
-}
 
 function drawPathLength(){
   let groups=d3.nest() //raggruppa i dati per lunghezza del path
@@ -469,21 +433,6 @@ function drawPathLength(){
 	  .attr("cy", yMap);
 }
 
-function initializeStatViz(){
-	viewType=1; 
-	h=500;
-	w=800;
-	appendSvg(h,w);
-}
-
-
-
-function initializeCrossingViz(){
-	viewType=2; 
-	h=800;
-	w=800;
-  appendSvg(h,w);
-}
 
 function parse(data){ //questo non serve: è gia un array!!
 	console.log(data);
@@ -528,19 +477,6 @@ function makePath(sortedVehicles){ //aggiungi maxDate, minDate, pathLength!
 	for (var i=1; i<sortedVehicles.length;i++){
 		
 		if (sortedVehicles[i].id!==sortedVehicles[i-1].id || (singlePath.path.length>1&&((sortedVehicles[i].gate.startsWith('entrance')&&sortedVehicles[i-1].gate.startsWith('entrance'))))){ //ARGH :D condizioni di terminazione: il veicolo seguente ha targa diversa oppure c'è un path di lunghezza >1 con due ingressi consecutivi
-			/*
-			let lowest = Number.POSITIVE_INFINITY;
-			let highest = Number.NEGATIVE_INFINITY;
-			let tmp;
-			for (let i=singlePath.length-1; i>=0; i--) {
-    			tmp = singlePath[i].timeStamp;
-    			if (tmp < lowest) lowest = tmp;
-    			if (tmp > highest) highest = tmp;
-			}
-			console.log(highest, lowest);
-			singlePath.min=0;
-			singlePath.max=1;
-			*/
 			let len=singlePath.path.length;
 			singlePath.pathLength=len;
 			arrayPath.push(singlePath);
@@ -742,5 +678,5 @@ function timeFilter(data){
 	return dayFiltered;
 }
 
-
+fetchData();
 loadAll();
