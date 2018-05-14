@@ -22,13 +22,15 @@
     </div> <!-- button-bar -->    
 	
 
-    <div class="main" id="main-screen">
+   
 	
 
-    	<div id="single-point-viz">
+    	<div class="first-viz" id="single-point-viz">
+           <div id="point-charts-header">
             <h3>Point analisys</h3>
-            <p>Examine the traffic on a single sensor.</p> 
-          <div class='test' id='points-chart'>
+            <p>Examine the traffic on a single sensor.</p>
+           </div><!--div-header-0--> 
+          <div id='point-chart'>
             <h4>Points chart</h4>
              <p>blablab </p> 
          </div><!-- points-chart-->    
@@ -37,20 +39,28 @@
 
 
 
-        <div id="path-length-viz">
-            <h3>Path analisys</h3>
-            <p>Relates the path length to the type of vehicle that generates it. A path is.. </p> 
-         <div class='test' id='dc-lengths-chart'>
-            <h4>lengths chart</h4>
-        </div>
-         <div class='test' id='dc-vehicles-chart'>
-            <h4>vehicles chart</h4>
-             <p>blablab </p> 
-        </div>
+        <div class="second-viz" id="path-length-viz">
+            <div id="path-charts-header">
+                <h3>Path analisys</h3>
+                <p>Relates the path length to the type of vehicle that generates it. A path is.. </p> 
+            </div><!--div-header-1--> 
+            <div id="path-charts">
+                  <div id='dc-vehicles-chart'>
+                <h4>vehicles chart</h4>
+                 <p>blablab </p> 
+                </div>
+                <div class="" id="path-stats">
+                <p>Path stats: total, avg lenght, max, min </p> 
+                </div>
+                <div class='test' id='dc-lengths-chart'>
+                <h4>lengths chart</h4>
+                </div>
+            </div><!--path charts-->
+       
     </div>
 
 
-    </div><!-- main-screen -->
+   
 
 
 </div><!-- wrapper -->

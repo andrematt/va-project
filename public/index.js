@@ -11,22 +11,21 @@ const padding=80;
 
 
 function pointStats(data){
-	 	  	//var xf = crossfilter(pathData);
-	    //console.log(xf.size());	
+	 	 let filtered = crossfilter(data);
+	     console.log(filtered.size());	
 	    //let test=nameFilter(name, pathData);
 	    //console.log(test);
 }
 
 function getPointData(gate){
 	let query = 'http://localhost:3000/sensor/'+gate;
-	console.log(query);
 	let result=[];
 	let singlePoint=fetch(query).then((resp) => resp.json());
 	singlePoint.then(function(value) {
 		value.forEach(function(val){
 			result.push(val);
 		})
- 		pointStats(pathData);
+ 		pointStats(result);
  	});
  	
 }
@@ -105,7 +104,7 @@ function drawVehicleChart(){
 function pathStats(data){
 	
 	let h = 250;
-	let w = 650;
+	let w = 550;
 	let maxX=d3.max(data, function(d){return d.pathLength});
 	let yValues=d3.nest()
   		.key(function(d) { return d.pathLength;})
@@ -113,10 +112,9 @@ function pathStats(data){
 		.entries(data);
   	let maxY=d3.max(yValues, function(d){return d.value});
   	let pixPerUnit = h / Math.log(maxY);
-   
+   	
 
 	let paths  = crossfilter(data);	
-	  all = paths.groupAll();
       id = paths.dimension(function(d) { return d.vehicleId; }),
       ids = id.group(),
       path =paths.dimension(function(d) { return d.path; }),
@@ -127,9 +125,26 @@ function pathStats(data){
       });
       types = type.group();
     
+    
+       let vehiclesChart = dc.rowChart("#dc-vehicles-chart");
+
+      vehiclesChart.width(w)
+    .height(h)
+    .margins({top: 10, right: 10, bottom: 20, left: 40})
+    .dimension(type)								// the values across the x axis
+    .group(types)
+    .ordinalColors(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])							// the values on the y axis
+	.transitionDuration(500)
+	.label(function (d){
+    	 return formatVehicleType(d);
+    })
+    .elasticX(true);
+
+
+
     let lengthsChart = dc.barChart("#dc-lengths-chart");
 
-    lengthsChart.width(w)
+    lengthsChart.width(850)
      .height(h)
      .margins({top: 10, right: 10, bottom: 20, left: 40})
      .dimension(pathLength)								// the values across the x axis
@@ -160,23 +175,6 @@ function pathStats(data){
  				return h;
             });
 		});
-
-		
-
-	  let vehiclesChart = dc.rowChart("#dc-vehicles-chart");
-
-      vehiclesChart.width(w)
-    .height(h)
-    .margins({top: 10, right: 10, bottom: 20, left: 40})
-    .dimension(type)								// the values across the x axis
-    .group(types)
-    .ordinalColors(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])							// the values on the y axis
-	.transitionDuration(500)
-	.label(function (d){
-    	 return formatVehicleType(d);
-    })
-    .elasticX(true);
-
 
 
    dc.renderAll();
@@ -360,7 +358,7 @@ function initializePointViz(){
 	var h=430;
 	var w=430;
 	let name="point-viz";
-	let appendTo = "points-chart";
+	let appendTo = "point-chart";
 	appendSvg(h,w, name, appendTo);
 	initializeNodes(h,w);
 	addOnclick();

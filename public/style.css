@@ -26,22 +26,65 @@
 
  .title {
   padding-left:20px;
- 	border-radius: 5px;
- 	grid-column: 1 / 13;
+ 	border-radius: 5px; 	grid-column: 1 / 13;
  	grid-row: 1;
  	background-color: #AA1212;
  }
 
 .main {
 	border-radius: 5px;
-  grid-column: col-start 2 / span 10;
-  background-color: #FDFDFD;
-  grid-row: 8/3;
+  /*background-color: #FDFDFD;*/
+  
 }
 
 .svg-container{
 	display:block;
 	margin:auto;
+}
+
+#dc-vehicles-chart{
+
+}
+
+
+#point-charts-header{
+  grid-column: col-start 2/ span 10;
+  grid-row: 1/2 ;
+}
+
+#point-charts{
+  grid-column: col-start 2/ span 10;
+   grid-row: 2/5 ;
+}
+
+#path-charts-header{
+  grid-column: col-start 2/ span 10;
+  grid-row: 13/15 ;
+}
+
+
+#path-charts{
+  grid-column: col-start 2/ span 10;
+  grid-row: 15/25 ;
+}
+
+.first-viz{
+   background-color: #FDFDFD;
+  height: 700px;
+  border-radius: 5px;
+  grid-column: col-start 2/ span 10;
+  /*grid-row: 8/3;*/
+  grid-row: 3/7 ;
+}
+
+.second-viz {
+ background-color: #FDFDFD;
+  height: 1000px;
+  border-radius: 5px;
+  grid-column: col-start 2/ span 10;
+  grid-row: 7/11 ;
+  /*grid-row: 8/3;*/
+ 
 }
 
 .left-box-1 {
